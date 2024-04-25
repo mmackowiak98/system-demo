@@ -26,17 +26,26 @@ public class OrderLogServiceImpl implements OrderLogService {
     public OrderLogResponse save(OrderLogRequest orderLogRequest) {
         log.trace("Saving order log");
 
-        Optional<OrderLog> existingOrder =
+        Optional<OrderLog> existingOrderLog =
                 orderLogRepository.findByShipmentNumber(orderLogRequest.getShipmentNumber());
 
-        if (existingOrder.isPresent()) {
-            OrderLog updatedOrderLog = updateOrder(orderLogRequest, existingOrder.get());
+        if (existingOrderLog.isPresent()) {
+            OrderLog updatedOrderLog = updateOrder(orderLogRequest, existingOrderLog.get());
             orderLogMapper.toOrderLogResponse(updatedOrderLog);
         } else {
             OrderLog savedOrderLog = saveNewOrder(orderLogRequest);
             return orderLogMapper.toOrderLogResponse(savedOrderLog);
         }
         throw new RuntimeException("Error saving order log");
+    }
+
+    @Override
+    public Boolean checkStatusCode(String shipmentNumber, int statusCode) {
+        log.trace("Checking status code");
+
+        return orderLogRepository.findByShipmentNumber(shipmentNumber)
+                .map(orderLog -> orderLog.getStatusCode() == statusCode)
+                .orElse(true);
     }
 
     private OrderLog updateOrder(OrderLogRequest orderRequest, OrderLog orderToUpdate) {

@@ -2,6 +2,27 @@ version: '3.7'
 
 services:
 
+  email-service:
+    image: mmackowiak98/email-service:latest
+    container_name: email-service
+    ports:
+      - "8084:8084"
+    depends_on:
+      - kafka1
+      - kafka2
+      - database-service
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    environment:
+      database.service.url: http://database-service:8083/order
+    networks:
+      - order-notification-system-network
+
+
   database-service:
     image: mmackowiak98/database-service:latest
     container_name: database-service
@@ -30,6 +51,7 @@ services:
     depends_on:
       - kafka1
       - kafka2
+      - database-service
     deploy:
       restart_policy:
         condition: on-failure

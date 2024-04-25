@@ -1,4 +1,4 @@
-package org.dpd.orderlog.model;
+package org.dpd.model;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;

@@ -4,6 +4,7 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.dpd.model.OrderLogRequest;
+import org.dpd.model.OrderLogResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
@@ -28,8 +29,8 @@ public class LoggingServiceImpl implements LoggingService {
                 .body(Mono.just(orderLogRequest), OrderLogRequest.class)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, clientResponse -> Mono.error(new RuntimeException("Error calling Order Log Database Service")))
-                .bodyToMono(String.class)
-                .subscribe(response -> log.info("Order logged successfully"),
+                .bodyToMono(OrderLogResponse.class)
+                .subscribe(response -> log.info("Order logged successfully: {}", response),
                         error -> log.error("Error occurred while calling Order Log Database Service", error));
     }
 

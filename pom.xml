@@ -20,6 +20,7 @@
         <module>order-processing-service</module>
         <module>logging-service</module>
         <module>database-service</module>
+        <module>email-service</module>
     </modules>
     <properties>
         <java.version>17</java.version>
