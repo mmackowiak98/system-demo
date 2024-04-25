@@ -1,0 +1,206 @@
+version: '3.7'
+
+services:
+
+  database-service:
+    image: mmackowiak98/database-service:latest
+    container_name: database-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      - kafka1
+      - kafka2
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    environment:
+      database.service.url: http://database-service:8083/order
+    networks:
+      - order-notification-system-network
+
+
+  logging-service:
+    image: mmackowiak98/logging-service:latest
+    container_name: logging-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - kafka1
+      - kafka2
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    environment:
+      database.service.url: http://database-service:8083/order
+    networks:
+      - order-notification-system-network
+
+
+  gateway-service:
+    image: mmackowiak98/gateway-service:latest
+    container_name: gateway-service
+    ports:
+      - "8080:8080"
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    environment:
+      order.processing.service.url: http://order-processing-service:8081/order
+    networks:
+      - order-notification-system-network
+
+
+  order-processing-service:
+    image: mmackowiak98/order-processing-service:latest
+    container_name: order-processing-service
+    depends_on:
+      - kafka1
+      - kafka2
+    ports:
+      - "8081:8081"
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    environment:
+      kafka.bootstrap.servers: "kafka2:29092,kafka1:19092"
+    networks:
+      - order-notification-system-network
+
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.2.7
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_INIT_LIMIT: 5
+      ZOOKEEPER_SYNC_LIMIT: 2
+      ZOOKEEPER_SERVERS: zookeeper:2888:3888
+    networks:
+      - order-notification-system-network
+
+  kafka1:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka1
+    ports:
+      - "19092:19092"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka1:9092,LISTENER_LOCAL://localhost:19092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,LISTENER_LOCAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - order-notification-system-network
+
+  kafka2:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka2
+    ports:
+      - "29092:29092"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka2:9092,LISTENER_LOCAL://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,LISTENER_LOCAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - order-notification-system-network
+
+  kafka-manager:
+    image: hlebalbau/kafka-manager:stable
+    restart: always
+    ports:
+      - "9000:9000"
+    environment:
+      ZK_HOSTS: "zookeeper:2181"
+    networks:
+      - order-notification-system-network
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:latest
+    hostname: schema-registry
+    depends_on:
+      - kafka1
+      - kafka2
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zookeeper:2181'
+      SCHEMA_REGISTRY_LISTENERS: http://schema-registry:8081
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka2:9092,LISTENER_LOCAL://localhost:29092
+      SCHEMA_REGISTRY_DEBUG: 'true'
+    networks:
+      - order-notification-system-network
+
+
+  init-kafka:
+    image: confluentinc/cp-kafka:latest
+    entrypoint: [ '/bin/sh', '-c' ]
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    depends_on:
+      - kafka1
+      - kafka2
+    command: |
+      "
+      # block until kafka is reachable
+      kafka-topics --bootstrap-server kafka1:9092 --list
+
+      echo -e 'Deleting kafka topics'
+      kafka-topics --bootstrap-server kafka1:9092 --topic order-topic --delete --if-exists
+      kafka-topics --bootstrap-server kafka1:9092 --topic order-producer --delete --if-exists
+
+      echo -e 'Creating kafka topics'
+      kafka-topics --bootstrap-server kafka1:9092 --create --if-not-exists --topic order-topic --replication-factor 1 --partitions 3
+      kafka-topics --bootstrap-server kafka1:9092 --create --if-not-exists --topic order-producer --replication-factor 1 --partitions 3
+
+      echo -e 'Successfully created the following topics:'
+      kafka-topics --bootstrap-server kafka1:9092 --list
+      "
+    networks:
+      - order-notification-system-network
+
+networks:
+  order-notification-system-network:
