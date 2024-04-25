@@ -190,11 +190,9 @@ services:
 
       echo -e 'Deleting kafka topics'
       kafka-topics --bootstrap-server kafka1:9092 --topic order-topic --delete --if-exists
-      kafka-topics --bootstrap-server kafka1:9092 --topic order-producer --delete --if-exists
 
       echo -e 'Creating kafka topics'
       kafka-topics --bootstrap-server kafka1:9092 --create --if-not-exists --topic order-topic --replication-factor 1 --partitions 3
-      kafka-topics --bootstrap-server kafka1:9092 --create --if-not-exists --topic order-producer --replication-factor 1 --partitions 3
 
       echo -e 'Successfully created the following topics:'
       kafka-topics --bootstrap-server kafka1:9092 --list
