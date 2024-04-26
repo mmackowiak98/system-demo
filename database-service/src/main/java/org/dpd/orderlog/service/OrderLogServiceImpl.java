@@ -1,5 +1,6 @@
 package org.dpd.orderlog.service;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,7 @@ public class OrderLogServiceImpl implements OrderLogService {
 
     @Override
     @Transactional
+    @CircuitBreaker(name = "databaseService", fallbackMethod = "saveFallback")
     public OrderLogResponse save(OrderLogRequest orderLogRequest) {
         log.info("Saving order log");
 
@@ -37,14 +39,21 @@ public class OrderLogServiceImpl implements OrderLogService {
             return orderLogMapper.toOrderLogResponse(savedOrderLog);
         }
     }
+    public void saveFallback(Throwable t) {
+        log.error("Fallback method called due to exception: ", t);
+    }
 
     @Override
+    @CircuitBreaker(name = "databaseService", fallbackMethod = "checkStatusCodeFallback")
     public Boolean checkStatusCode(String shipmentNumber, int statusCode) {
         log.info("Checking status code");
 
         return orderLogRepository.findByShipmentNumber(shipmentNumber)
                 .map(orderLog -> orderLog.getStatusCode() == statusCode)
                 .orElse(true);
+    }
+    public void checkStatusCodeFallback(Throwable t) {
+        log.error("Fallback method called due to exception: ", t);
     }
 
     private OrderLog updateOrder(OrderLogRequest orderRequest, OrderLog orderToUpdate) {

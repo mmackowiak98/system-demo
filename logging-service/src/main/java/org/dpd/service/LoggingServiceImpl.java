@@ -22,7 +22,7 @@ public class LoggingServiceImpl implements LoggingService {
     private final WebClient webClient;
 
     @Override
-    @CircuitBreaker(name = "orderLogService", fallbackMethod = "logToDatabaseFallback")
+    @CircuitBreaker(name = "loggingService", fallbackMethod = "logToDatabaseFallback")
     public void logToDatabase(OrderLogRequest orderLogRequest) {
         webClient.post()
                 .uri(databaseServiceUrl)
