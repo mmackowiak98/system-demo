@@ -24,24 +24,23 @@ public class OrderLogServiceImpl implements OrderLogService {
     @Override
     @Transactional
     public OrderLogResponse save(OrderLogRequest orderLogRequest) {
-        log.trace("Saving order log");
+        log.info("Saving order log");
 
         Optional<OrderLog> existingOrderLog =
                 orderLogRepository.findByShipmentNumber(orderLogRequest.getShipmentNumber());
 
         if (existingOrderLog.isPresent()) {
             OrderLog updatedOrderLog = updateOrder(orderLogRequest, existingOrderLog.get());
-            orderLogMapper.toOrderLogResponse(updatedOrderLog);
+            return orderLogMapper.toOrderLogResponse(updatedOrderLog);
         } else {
             OrderLog savedOrderLog = saveNewOrder(orderLogRequest);
             return orderLogMapper.toOrderLogResponse(savedOrderLog);
         }
-        throw new RuntimeException("Error saving order log");
     }
 
     @Override
     public Boolean checkStatusCode(String shipmentNumber, int statusCode) {
-        log.trace("Checking status code");
+        log.info("Checking status code");
 
         return orderLogRepository.findByShipmentNumber(shipmentNumber)
                 .map(orderLog -> orderLog.getStatusCode() == statusCode)
@@ -49,13 +48,13 @@ public class OrderLogServiceImpl implements OrderLogService {
     }
 
     private OrderLog updateOrder(OrderLogRequest orderRequest, OrderLog orderToUpdate) {
-        log.trace("Order already exists, updating status");
+        log.info("Order already exists, updating status");
         orderToUpdate.setStatusCode(orderRequest.getStatusCode());
         return orderLogRepository.save(orderToUpdate);
     }
 
     private OrderLog saveNewOrder(OrderLogRequest orderRequest) {
-        log.trace("Creating new order");
+        log.info("Creating new order");
         OrderLog mappedOrderLog = orderLogMapper.toOrderLog(orderRequest);
         return orderLogRepository.save(mappedOrderLog);
     }

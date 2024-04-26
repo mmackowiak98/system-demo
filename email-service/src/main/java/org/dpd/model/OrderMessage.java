@@ -9,7 +9,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @NoArgsConstructor
-public class OrderLogRequest {
+public class OrderMessage {
     private String shipmentNumber;
     private String receiverEmail;
     private String receiverCountryCode;

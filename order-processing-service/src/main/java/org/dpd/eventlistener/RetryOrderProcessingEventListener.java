@@ -14,18 +14,18 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @PropertySource("classpath:kafka-config.properties")
-public class OrderProcessingEventListener {
+public class RetryOrderProcessingEventListener {
 
-    @Value("${topic.name}")
-    private String topic;
+  @Value("${retry-topic.name}")
+  private String topic;
 
-    private final KafkaTemplate<String, OrderRequest> kafkaTemplate;
+  private final KafkaTemplate<String, OrderRequest> kafkaTemplate;
 
-    @EventListener
-    public void processEvent(OrderProcessingEvent event) {
-        log.info("Received order processing event");
-        OrderRequest order = event.getOrder();
-        log.info("Sending order to Kafka topic: {}", topic);
-        kafkaTemplate.send(topic, order.getShipmentNumber(), order);
-    }
+  @EventListener
+  public void processEvent(OrderProcessingEvent event) {
+    log.info("Retrying processing event");
+    OrderRequest order = event.getOrder();
+    log.info("Sending order to Kafka topic: {}", topic);
+    kafkaTemplate.send(topic, order.getShipmentNumber(), order);
+  }
 }

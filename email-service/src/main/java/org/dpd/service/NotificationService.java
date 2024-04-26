@@ -1,7 +1,7 @@
 package org.dpd.service;
 
-import org.dpd.model.OrderLogRequest;
+import org.dpd.model.OrderMessage;
 
 public interface NotificationService {
-    void sendEmail(OrderLogRequest orderLogRequest);
+    void sendEmail(OrderMessage orderMessage);
 }
