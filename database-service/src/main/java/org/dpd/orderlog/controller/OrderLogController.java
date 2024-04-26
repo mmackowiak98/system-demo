@@ -21,6 +21,7 @@ public class OrderLogController {
         return ResponseEntity.ok(orderLogService.save(orderLogRequest));
     }
 
+    @GetMapping
     public ResponseEntity<Boolean> checkStatusCode(@RequestParam String shipmentNumber, @RequestParam int statusCode) {
         log.trace("Received status code check request: {}", statusCode);
         return ResponseEntity.ok(orderLogService.checkStatusCode(shipmentNumber,statusCode));

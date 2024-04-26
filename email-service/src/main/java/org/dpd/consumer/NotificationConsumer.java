@@ -10,44 +10,69 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 import reactor.kafka.receiver.KafkaReceiver;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class NotificationConsumer implements ApplicationRunner {
+    private final WebClient webClient;
     private final ObjectMapper objectMapper;
     private final NotificationService notificationService;
     private final KafkaReceiver<String, String> consumer;
+    @Value("${database.service.url}")
+    private String databaseServiceUrl;
     @Value("${retry.count}")
     private int retryCount;
     @Value("${backpressure.buffer}")
     private int backpressureBuffer;
 
     @Override
-    public void run(ApplicationArguments args)  {
+    public void run(ApplicationArguments args) {
         consume();
     }
 
     private void consume() {
-    consumer
-        .receive()
-        .onBackpressureBuffer(backpressureBuffer)
-        .retry(retryCount)
-        .filter(message -> hasStatusCodeChanged(message.value()))
-        .subscribe(message -> {
-            try {
-                log.info("Consumed message: {}", message.value());
-                OrderMessage orderMessage = objectMapper.readValue(message.value(), OrderMessage.class);
-                notificationService.sendEmail(orderMessage);
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
-            }
-        });
+        consumer
+                .receive()
+                .onBackpressureBuffer(backpressureBuffer)
+                .retry(retryCount)
+                .flatMap(message -> hasStatusCodeChanged(message.value())
+                        .filter(Boolean::booleanValue)
+                        .map(response -> message))
+                .subscribe(message -> {
+                    try {
+                        log.info("Consumed message: {}", message.value());
+                        OrderMessage orderMessage = objectMapper.readValue(message.value(), OrderMessage.class);
+                        notificationService.sendEmail(orderMessage);
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
     }
 
-    private boolean hasStatusCodeChanged(String message) {
-        //TODO 2: Implement the logic to check if the status code has changed based on response from database-service
-        return true;
+    private Mono<Boolean> hasStatusCodeChanged(String message) {
+        try {
+            OrderMessage orderMessage = objectMapper.readValue(message, OrderMessage.class);
+            return webClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path(databaseServiceUrl)
+                            .queryParam("shipmentNumber", orderMessage.getShipmentNumber())
+                            .queryParam("statusCode", orderMessage.getStatusCode())
+                            .build())
+                    .retrieve()
+                    .bodyToMono(Boolean.class)
+                    .doOnNext(response -> {
+                        if (response) {
+                            log.info("Status code has changed");
+                        } else {
+                            log.info("Status code has not changed");
+                        }
+                    });
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
