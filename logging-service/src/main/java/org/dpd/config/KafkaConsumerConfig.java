@@ -22,8 +22,6 @@ public class KafkaConsumerConfig {
     private String groupId;
     @Value("${topic.name}")
     private String topic;
-    @Value("${retry-topic.name}")
-    private String retryTopic;
 
     @Bean
     public ReceiverOptions<String, String> receiverOptions() {
