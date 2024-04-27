@@ -34,7 +34,7 @@ public class NotificationConsumer implements ApplicationRunner {
         consume();
     }
 
-    private void consume() {
+    public void consume() {
         consumer
                 .receive()
                 .onBackpressureBuffer(backpressureBuffer)
