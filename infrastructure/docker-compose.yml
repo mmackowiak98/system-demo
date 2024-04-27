@@ -18,7 +18,7 @@ services:
 #        max_attempts: 3
 #        window: 120s
 #    environment:
-#      database.service.url: http://database-service:8083/order
+#      database.service.url: http://database-service:8083/order-log
 #    networks:
 #      - order-notification-system-network
 #
@@ -38,7 +38,7 @@ services:
 #        max_attempts: 3
 #        window: 120s
 #    environment:
-#      database.service.url: http://database-service:8083/order
+#      database.service.url: http://database-service:8083/order-log
 #    networks:
 #      - order-notification-system-network
 #
@@ -101,6 +101,38 @@ services:
 #      kafka.bootstrap.servers: "kafka2:29092,kafka1:19092"
 #    networks:
 #      - order-notification-system-network
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.0
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.http.ssl.enabled=false
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.13.2
+    ports:
+      - "5044:5044"
+    environment:
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+    volumes:
+      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+
 
   redis:
     image: redis:latest
@@ -218,11 +250,9 @@ services:
 
       echo -e 'Deleting kafka topics'
       kafka-topics --bootstrap-server kafka1:9092 --topic order-topic --delete --if-exists
-      kafka-topics --bootstrap-server kafka1:9092 --topic retry-topic --delete --if-exists
 
       echo -e 'Creating kafka topics'
       kafka-topics --bootstrap-server kafka1:9092 --create --if-not-exists --topic order-topic --replication-factor 1 --partitions 3
-      kafka-topics --bootstrap-server kafka1:9092 --create --if-not-exists --topic retry-topic --replication-factor 1 --partitions 3
 
       echo -e 'Successfully created the following topics:'
       kafka-topics --bootstrap-server kafka1:9092 --list
@@ -232,3 +262,6 @@ services:
 
 networks:
   order-notification-system-network:
+
+volumes:
+  esdata:

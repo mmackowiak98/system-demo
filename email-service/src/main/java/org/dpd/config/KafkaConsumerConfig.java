@@ -23,8 +23,6 @@ public class KafkaConsumerConfig {
     private String groupId;
     @Value("${topic.name}")
     private String topic;
-    @Value("${retry-topic.name}")
-    private String retryTopic;
 
     @Bean
     public ReceiverOptions<String, String> receiverOptions() {
@@ -34,7 +32,7 @@ public class KafkaConsumerConfig {
         configProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         configProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         ReceiverOptions<String, String> receiverOptions = ReceiverOptions.create(configProps);
-        return receiverOptions.subscription(List.of(topic,retryTopic));
+        return receiverOptions.subscription(List.of(topic));
     }
 
     @Bean

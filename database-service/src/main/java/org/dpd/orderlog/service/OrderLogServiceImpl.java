@@ -39,8 +39,9 @@ public class OrderLogServiceImpl implements OrderLogService {
             return orderLogMapper.toOrderLogResponse(savedOrderLog);
         }
     }
-    public void saveFallback(Throwable t) {
+    public OrderLogResponse saveFallback(OrderLogRequest orderLogRequest, Throwable t) {
         log.error("Fallback method called due to exception: ", t);
+        return null;
     }
 
     @Override
@@ -49,17 +50,24 @@ public class OrderLogServiceImpl implements OrderLogService {
         log.info("Checking status code");
 
         return orderLogRepository.findByShipmentNumber(shipmentNumber)
-                .map(orderLog -> orderLog.getStatusCode() == statusCode)
+                .map(orderLog -> orderLog.getStatusCode() != statusCode)
                 .orElse(true);
     }
-    public void checkStatusCodeFallback(Throwable t) {
+    public Boolean checkStatusCodeFallback(String shipmentNumber, int statusCode, Throwable t) {
         log.error("Fallback method called due to exception: ", t);
+        return false;
     }
 
     private OrderLog updateOrder(OrderLogRequest orderRequest, OrderLog orderToUpdate) {
-        log.info("Order already exists, updating status");
-        orderToUpdate.setStatusCode(orderRequest.getStatusCode());
-        return orderLogRepository.save(orderToUpdate);
+        log.info("Order already exists, checking status");
+        if (orderToUpdate.getStatusCode() != orderRequest.getStatusCode()) {
+            log.info("Status code is different, updating status");
+            orderToUpdate.setStatusCode(orderRequest.getStatusCode());
+            return orderLogRepository.save(orderToUpdate);
+        } else {
+            log.info("Status code is the same, no changes made");
+            return orderToUpdate;
+        }
     }
 
     private OrderLog saveNewOrder(OrderLogRequest orderRequest) {

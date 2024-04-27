@@ -17,13 +17,13 @@ public class OrderLogController {
 
     @PostMapping
     public ResponseEntity<OrderLogResponse> save(@RequestBody OrderLogRequest orderLogRequest) {
-        log.trace("Received order log request: {}", orderLogRequest);
+        log.info("Received order log request: {}", orderLogRequest);
         return ResponseEntity.ok(orderLogService.save(orderLogRequest));
     }
 
     @GetMapping
     public ResponseEntity<Boolean> checkStatusCode(@RequestParam String shipmentNumber, @RequestParam int statusCode) {
-        log.trace("Received status code check request: {}", statusCode);
-        return ResponseEntity.ok(orderLogService.checkStatusCode(shipmentNumber,statusCode));
+        log.info("Received status code check request: {}", statusCode);
+        return ResponseEntity.ok(orderLogService.checkStatusCode(shipmentNumber, statusCode));
     }
 }

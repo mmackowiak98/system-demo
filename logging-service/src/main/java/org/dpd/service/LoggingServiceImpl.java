@@ -28,7 +28,7 @@ public class LoggingServiceImpl implements LoggingService {
                 .uri(databaseServiceUrl)
                 .body(Mono.just(orderLogRequest), OrderLogRequest.class)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, clientResponse -> Mono.error(new RuntimeException("Error calling Order Log Database Service")))
+                .onStatus(HttpStatusCode::is4xxClientError, clientResponse -> Mono.error(new RuntimeException("Error calling Database Service")))
                 .bodyToMono(OrderLogResponse.class)
                 .subscribe(response -> log.info("Order logged successfully: {}", response),
                         error -> log.error("Error occurred while calling Order Log Database Service", error));

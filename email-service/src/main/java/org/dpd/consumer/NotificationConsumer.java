@@ -22,8 +22,8 @@ public class NotificationConsumer implements ApplicationRunner {
     private final ObjectMapper objectMapper;
     private final NotificationService notificationService;
     private final KafkaReceiver<String, String> consumer;
-    @Value("${database.service.url}")
-    private String databaseServiceUrl;
+    @Value("${database.service.host}")
+    private String databaseServiceHost;
     @Value("${retry.count}")
     private int retryCount;
     @Value("${backpressure.buffer}")
@@ -58,7 +58,10 @@ public class NotificationConsumer implements ApplicationRunner {
             OrderMessage orderMessage = objectMapper.readValue(message, OrderMessage.class);
             return webClient.get()
                     .uri(uriBuilder -> uriBuilder
-                            .path(databaseServiceUrl)
+                            .scheme("http")
+                            .host(databaseServiceHost)
+                            .port(8083)
+                            .path("/order-log")
                             .queryParam("shipmentNumber", orderMessage.getShipmentNumber())
                             .queryParam("statusCode", orderMessage.getStatusCode())
                             .build())
