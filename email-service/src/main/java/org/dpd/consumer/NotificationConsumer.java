@@ -31,10 +31,12 @@ public class NotificationConsumer implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
+        log.info("Notification consumer started");
         consume();
     }
 
     public void consume() {
+        log.info("Consuming messages");
         consumer
                 .receive()
                 .onBackpressureBuffer(backpressureBuffer)
