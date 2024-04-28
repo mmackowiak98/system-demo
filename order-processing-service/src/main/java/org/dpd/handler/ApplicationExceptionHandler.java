@@ -18,10 +18,10 @@ public class ApplicationExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ProblemDetail> handleException(Exception exception) {
         log.error("An exception occurred");
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(
                         ProblemDetail.forStatusAndDetail(
-                                HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage()));
+                                HttpStatus.BAD_REQUEST, exception.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

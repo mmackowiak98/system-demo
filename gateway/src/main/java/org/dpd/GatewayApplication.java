@@ -18,11 +18,13 @@ public class GatewayApplication {
 
     @Value("${order.processing.service.url}")
     private String orderProcessingServiceUrl;
+    @Value("${order.route.path}")
+    private String orderRoutePath;
 
     @Bean
     public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
         return builder.routes()
-                .route("path_route", r -> r.path("/order")
+                .route("path_route", r -> r.path(orderRoutePath)
                         .and()
                         .method("POST")
                         .filters(f -> f.requestRateLimiter(c -> c.setRateLimiter(redisRateLimiter())))

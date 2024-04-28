@@ -18,10 +18,12 @@ import reactor.kafka.receiver.KafkaReceiver;
 @Component
 @RequiredArgsConstructor
 public class NotificationConsumer implements ApplicationRunner {
+
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
     private final NotificationService notificationService;
     private final KafkaReceiver<String, String> consumer;
+
     @Value("${database.service.host}")
     private String databaseServiceHost;
     @Value("${retry.count}")

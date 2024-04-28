@@ -16,10 +16,10 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class LoggingServiceImpl implements LoggingService {
 
+    private final WebClient webClient;
+
     @Value("${database.service.url}")
     private String databaseServiceUrl;
-
-    private final WebClient webClient;
 
     @Override
     @CircuitBreaker(name = "loggingService", fallbackMethod = "logToDatabaseFallback")

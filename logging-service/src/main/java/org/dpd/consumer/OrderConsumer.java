@@ -17,33 +17,36 @@ import reactor.kafka.receiver.KafkaReceiver;
 @RequiredArgsConstructor
 public class OrderConsumer implements ApplicationRunner {
 
-  private final ObjectMapper objectMapper;
-  private final LoggingService loggingService;
-  private final KafkaReceiver<String, String> consumer;
-  @Value("${retry.count}")
-  private int retryCount;
-  @Value("${backpressure.buffer}")
-  private int backpressureBuffer;
+    private final ObjectMapper objectMapper;
+    private final LoggingService loggingService;
+    private final KafkaReceiver<String, String> consumer;
 
-  @Override
-  public void run(ApplicationArguments args) {
-    consume();
-  }
+    @Value("${retry.count}")
+    private int retryCount;
+    @Value("${backpressure.buffer}")
+    private int backpressureBuffer;
 
-  private void consume() {
-    consumer
-        .receive()
-        .onBackpressureBuffer(backpressureBuffer)
-        .retry(retryCount)
-        .subscribe(message -> {
-          try {
-            log.info("Consumed message: {}", message.value());
-            OrderLogRequest orderLogRequest = objectMapper.readValue(message.value(),
-                OrderLogRequest.class);
-            loggingService.logToDatabase(orderLogRequest);
-          } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-          }
-        });
-  }
+    @Override
+    public void run(ApplicationArguments args) {
+        log.info("OrderConsumer started");
+        consume();
+    }
+
+    private void consume() {
+        log.info("Consuming messages");
+        consumer
+                .receive()
+                .onBackpressureBuffer(backpressureBuffer)
+                .retry(retryCount)
+                .subscribe(message -> {
+                    try {
+                        log.info("Consumed message: {}", message.value());
+                        OrderLogRequest orderLogRequest = objectMapper.readValue(message.value(),
+                                OrderLogRequest.class);
+                        loggingService.logToDatabase(orderLogRequest);
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+    }
 }

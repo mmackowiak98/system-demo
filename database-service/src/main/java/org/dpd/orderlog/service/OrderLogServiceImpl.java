@@ -39,6 +39,7 @@ public class OrderLogServiceImpl implements OrderLogService {
             return orderLogMapper.toOrderLogResponse(savedOrderLog);
         }
     }
+
     public OrderLogResponse saveFallback(OrderLogRequest orderLogRequest, Throwable t) {
         log.error("Fallback method called due to exception: ", t);
         return null;
@@ -53,6 +54,7 @@ public class OrderLogServiceImpl implements OrderLogService {
                 .map(orderLog -> orderLog.getStatusCode() != statusCode)
                 .orElse(true);
     }
+
     public Boolean checkStatusCodeFallback(String shipmentNumber, int statusCode, Throwable t) {
         log.error("Fallback method called due to exception: ", t);
         return false;

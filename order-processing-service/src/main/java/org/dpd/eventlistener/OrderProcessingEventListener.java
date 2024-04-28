@@ -16,10 +16,11 @@ import org.springframework.stereotype.Component;
 @PropertySource("classpath:kafka-config.properties")
 public class OrderProcessingEventListener {
 
+    private final KafkaTemplate<String, OrderRequest> kafkaTemplate;
+
     @Value("${topic.name}")
     private String topic;
 
-    private final KafkaTemplate<String, OrderRequest> kafkaTemplate;
 
     @EventListener
     public void processEvent(OrderProcessingEvent event) {
