@@ -19,6 +19,7 @@ services:
         window: 120s
     environment:
      database.service.host: database-service
+     kafka.bootstrap.servers: "kafka2:29092,kafka1:19092"
     networks:
       - order-notification-system-network
 
@@ -55,6 +56,7 @@ services:
         window: 120s
     environment:
       database.service.url: http://database-service:8083/order
+      kafka.bootstrap.servers: "kafka2:29092,kafka1:19092"
     networks:
       - order-notification-system-network
 
